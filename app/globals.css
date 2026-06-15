@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --cream: #F5EEE4;
+  --cream-dark: #EDE5D8;
+  --navy: #1C2240;
+  --navy-light: #2E3760;
+  --coral: #E8715A;
+  --coral-dark: #D45E49;
+  --coral-light: #F0A090;
+  --teal: #5BA89A;
+  --teal-light: #A8D4CE;
+  --tan: #EAD5B7;
+  --white: #FFFFFF;
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-cream-dark: var(--cream-dark);
+  --color-navy: var(--navy);
+  --color-navy-light: var(--navy-light);
+  --color-coral: var(--coral);
+  --color-coral-dark: var(--coral-dark);
+  --color-coral-light: var(--coral-light);
+  --color-teal: var(--teal);
+  --color-teal-light: var(--teal-light);
+  --color-tan: var(--tan);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--cream);
+  color: var(--navy);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Quiz option transitions */
+.quiz-option {
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.quiz-option:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
