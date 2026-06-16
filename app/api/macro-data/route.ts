@@ -87,7 +87,7 @@ export async function GET() {
       fetchFred('CES3000000008', { aggregation: 'avg' }), // mfg hourly earnings
       fetchFred('AAA', { aggregation: 'avg' }),
       fetchFred('MEFAINUSA672N'),
-      fetchFred('PPAAUS'),   // Poverty rate, all people (families not on FRED)
+      fetchFred('PPAAUS00000A156NCEN'), // Poverty rate, all people 1989-present
       fetchFred('PCEC'),
       fetchFred('GPDI'),
       fetchFred('GCE'),
