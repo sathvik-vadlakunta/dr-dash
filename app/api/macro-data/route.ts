@@ -5,6 +5,63 @@ export const revalidate = 86400;
 
 const BASE = 'https://api.stlouisfed.org/fred/series/observations';
 
+// Census Historical Income Table H-2 — household income quintile shares (% of aggregate income)
+// Bundled statically; no API provides this data. Source: U.S. Census Bureau.
+const QUINTILE_SHARES: Record<number, [number,number,number,number,number]> = {
+  1947:[5.0,11.9,17.0,23.1,43.0],1948:[4.9,12.1,17.3,23.2,42.4],1949:[4.5,11.9,17.3,23.5,42.7],
+  1950:[4.5,12.0,17.4,23.4,42.7],1951:[5.0,12.4,17.6,23.4,41.6],1952:[4.9,12.3,17.4,23.4,41.9],
+  1953:[4.7,12.5,18.0,23.9,40.9],1954:[4.5,12.1,17.7,23.9,41.8],1955:[4.8,12.3,17.8,23.7,41.3],
+  1956:[5.0,12.5,17.9,23.7,41.0],1957:[5.1,12.7,18.1,23.8,40.4],1958:[5.0,12.5,18.0,23.9,40.6],
+  1959:[4.9,12.3,17.9,23.8,41.1],1960:[4.8,12.2,17.8,24.0,41.3],1961:[4.7,11.9,17.5,23.8,42.2],
+  1962:[5.0,12.1,17.6,24.0,41.3],1963:[5.0,12.1,17.7,24.0,41.2],1964:[5.1,12.0,17.7,24.0,41.2],
+  1965:[5.2,12.2,17.8,23.9,40.9],1966:[5.6,12.4,17.8,23.8,40.5],1967:[4.0,10.8,17.3,24.2,43.6],
+  1968:[4.2,11.1,17.6,24.5,42.6],1969:[4.1,10.9,17.5,24.5,43.0],1970:[4.1,10.8,17.4,24.5,43.3],
+  1971:[4.1,10.6,17.3,24.5,43.5],1972:[4.1,10.4,17.0,24.5,43.9],1973:[4.2,10.4,17.0,24.5,43.9],
+  1974:[4.3,10.6,17.0,24.6,43.5],1975:[4.3,10.4,17.0,24.7,43.6],1976:[4.3,10.3,17.0,24.7,43.7],
+  1977:[4.2,10.2,16.9,24.7,44.0],1978:[4.2,10.2,16.8,24.7,44.1],1979:[4.1,10.2,16.8,24.6,44.2],
+  1980:[4.2,10.2,16.8,24.7,44.1],1981:[4.1,10.1,16.7,24.8,44.3],1982:[4.0,10.0,16.5,24.5,45.0],
+  1983:[4.0,9.9,16.4,24.6,45.1],1984:[4.0,9.9,16.3,24.6,45.2],1985:[3.9,9.8,16.2,24.4,45.6],
+  1986:[3.8,9.7,16.2,24.3,46.1],1987:[3.8,9.6,16.1,24.3,46.2],1988:[3.8,9.6,16.0,24.2,46.3],
+  1989:[3.8,9.5,15.8,24.0,46.8],1990:[3.8,9.6,15.9,24.0,46.6],1991:[3.8,9.6,15.9,24.2,46.5],
+  1992:[3.8,9.4,15.8,24.2,46.9],1993:[3.6,9.0,15.1,23.5,48.9],1994:[3.6,8.9,15.0,23.4,49.1],
+  1995:[3.7,9.1,15.2,23.3,48.7],1996:[3.6,9.0,15.1,23.3,49.0],1997:[3.6,8.9,15.0,23.2,49.4],
+  1998:[3.6,9.0,15.0,23.2,49.2],1999:[3.6,8.9,14.9,23.2,49.4],2000:[3.6,8.9,14.8,23.0,49.8],
+  2001:[3.5,8.7,14.6,23.0,50.1],2002:[3.5,8.8,14.8,23.3,49.7],2003:[3.4,8.7,14.8,23.4,49.8],
+  2004:[3.4,8.7,14.7,23.2,50.1],2005:[3.4,8.6,14.6,23.0,50.4],2006:[3.4,8.6,14.5,22.9,50.5],
+  2007:[3.4,8.7,14.8,23.4,49.7],2008:[3.4,8.6,14.7,23.3,50.0],2009:[3.4,8.6,14.6,23.2,50.3],
+  2010:[3.3,8.5,14.6,23.4,50.3],2011:[3.2,8.4,14.3,23.0,51.1],2012:[3.2,8.3,14.4,23.0,51.0],
+  2013:[3.2,8.4,14.4,23.0,51.0],2014:[3.1,8.2,14.3,23.2,51.2],2015:[3.1,8.2,14.3,23.2,51.1],
+  2016:[3.1,8.3,14.2,22.9,51.5],2017:[3.1,8.2,14.3,23.0,51.5],2018:[3.1,8.3,14.1,22.6,52.0],
+  2020:[3.1,8.3,14.1,22.8,51.8],2021:[3.1,8.3,14.1,22.9,51.7],2022:[3.1,8.3,14.1,23.0,51.6],
+  2023:[3.1,8.3,14.2,23.0,51.5],
+};
+
+// Census histpov2: family poverty rate back to 1959 (FRED only has 1989+)
+async function fetchCensusPoverty(): Promise<Record<number, number>> {
+  try {
+    const key = process.env.CENSUS_API_KEY;
+    if (!key) return {};
+    const url = `https://api.census.gov/data/timeseries/poverty/histpov2?get=YEAR,PCTFAMPOV&for=us:1&key=${key}`;
+    const res = await fetch(url, { next: { revalidate: 86400 } });
+    if (!res.ok) { console.warn(`Census histpov2: HTTP ${res.status} — skipping`); return {}; }
+    const rows: string[][] = await res.json();
+    const headers = rows[0];
+    const yearIdx = headers.indexOf('YEAR');
+    const pctIdx = headers.indexOf('PCTFAMPOV');
+    if (yearIdx === -1 || pctIdx === -1) return {};
+    const out: Record<number, number> = {};
+    for (const row of rows.slice(1)) {
+      const yr = parseInt(row[yearIdx], 10);
+      const val = parseFloat(row[pctIdx]);
+      if (!isNaN(yr) && !isNaN(val)) out[yr] = val;
+    }
+    return out;
+  } catch (e) {
+    console.warn('fetchCensusPoverty error:', e);
+    return {};
+  }
+}
+
 // Fetch one FRED series — returns empty object on any failure (never throws)
 async function fetchFred(
   seriesId: string,
@@ -64,12 +121,13 @@ export async function GET() {
       wage,         // Avg hourly earnings, manufacturing, $/hr
       aaaBond,      // Moody's AAA corporate bond yield %
       medianIncome, // Real median family income, current $ (Census)
-      povertyRate,  // Family poverty rate %
+      povertyRate,  // Family poverty rate % (FRED, 1989+)
       consumption,  // PCE, billions $
       investment,   // Gross private domestic investment, billions $
       govSpend,     // Government consumption & investment, billions $
       exports,      // Exports, billions $
       imports,      // Imports, billions $
+      censusPoverty, // Census family poverty rate 1959-present
     ] = await Promise.all([
       fetchFred('GDP'),
       fetchFred('GDPCA'),
@@ -93,6 +151,7 @@ export async function GET() {
       fetchFred('GCE'),
       fetchFred('EXPGS'),
       fetchFred('IMPGS'),
+      fetchCensusPoverty(),
     ]);
 
     // Anchor real GDP to 2024 dollars (FRED uses 2017 base)
@@ -181,13 +240,12 @@ export async function GET() {
         gov_exp_pct_gnp: pctGnp(expend),
         national_debt_pct_gnp: pctGnp(debt),
         median_family_income: medianIncome[yr] ?? null,
-        poverty_rate: povertyRate[yr] ?? null,
-        // Income quintile shares not available via FRED API
-        income_share_q1: null,
-        income_share_q2: null,
-        income_share_q3: null,
-        income_share_q4: null,
-        income_share_q5: null,
+        poverty_rate: censusPoverty[yr] ?? povertyRate[yr] ?? null,
+        income_share_q1: QUINTILE_SHARES[yr]?.[0] ?? null,
+        income_share_q2: QUINTILE_SHARES[yr]?.[1] ?? null,
+        income_share_q3: QUINTILE_SHARES[yr]?.[2] ?? null,
+        income_share_q4: QUINTILE_SHARES[yr]?.[3] ?? null,
+        income_share_q5: QUINTILE_SHARES[yr]?.[4] ?? null,
       };
     }
 
