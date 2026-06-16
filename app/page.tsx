@@ -20,21 +20,25 @@ export default function Home() {
   const [yearRange, setYearRange] = useState<[number, number]>([1929, 2024]);
   const [tab, setTab] = useState<'chart' | 'lessons'>('chart');
   const [colorIndex, setColorIndex] = useState(0);
+  const [dataSource, setDataSource] = useState<'loading' | 'live' | 'static'>('loading');
 
   useEffect(() => {
     const load = (url: string) =>
       fetch(url)
         .then(r => { if (!r.ok) throw new Error(r.status.toString()); return r.json(); })
         .then((d: DataMap) => {
-          // Ignore error payloads from the API route
           const years = Object.keys(d).map(Number).filter(n => !isNaN(n) && n >= 1900).sort((a, b) => a - b);
           if (years.length === 0) throw new Error('no valid years');
           setRawData(d);
           setYearRange([years[0], years[years.length - 1]]);
         });
 
-    // Try live FRED data first, fall back to bundled statsbook JSON
-    load('/api/macro-data').catch(() => load('/statsbook_data.json'));
+    load('/api/macro-data')
+      .then(() => setDataSource('live'))
+      .catch(() =>
+        load('/statsbook_data.json')
+          .then(() => setDataSource('static'))
+      );
   }, []);
 
   const rebuildChartData = useCallback((data: DataMap, series: ActiveSeries[]) => {
@@ -131,13 +135,34 @@ export default function Home() {
           {tabBtn('lessons', <BookOpen size={14} />, 'Lessons')}
         </div>
 
-        <button
-          onClick={() => setShowLanding(true)}
-          className="text-[11px] italic transition-opacity hover:opacity-70"
-          style={{ color: 'var(--navy)', opacity: 0.35 }}
-        >
-          Pingle, <em>U.S. Macroeconomic Statistics</em>, 29th ed. (2025)
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Data source indicator */}
+          {dataSource === 'loading' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold animate-pulse" style={{ background: 'var(--cream-dark)', color: 'var(--navy)' }}>
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--navy)', opacity: 0.3 }} />
+              Loading…
+            </div>
+          )}
+          {dataSource === 'live' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(91,168,154,0.12)', color: 'var(--teal)' }}>
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--teal)' }} />
+              Live · FRED API
+            </div>
+          )}
+          {dataSource === 'static' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(212,160,32,0.12)', color: '#A07800' }}>
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#D4A020' }} />
+              Statsbook 2025
+            </div>
+          )}
+          <button
+            onClick={() => setShowLanding(true)}
+            className="text-[11px] italic transition-opacity hover:opacity-70 hidden md:block"
+            style={{ color: 'var(--navy)', opacity: 0.35 }}
+          >
+            Pingle, <em>U.S. Macroeconomic Statistics</em>, 29th ed. (2025)
+          </button>
+        </div>
       </header>
 
       {/* Body */}
