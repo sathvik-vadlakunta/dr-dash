@@ -22,13 +22,19 @@ export default function Home() {
   const [colorIndex, setColorIndex] = useState(0);
 
   useEffect(() => {
-    fetch('/api/macro-data')
-      .then(r => r.json())
-      .then((d: DataMap) => {
-        setRawData(d);
-        const years = Object.keys(d).map(Number).sort((a, b) => a - b);
-        setYearRange([years[0], years[years.length - 1]]);
-      });
+    const load = (url: string) =>
+      fetch(url)
+        .then(r => { if (!r.ok) throw new Error(r.status.toString()); return r.json(); })
+        .then((d: DataMap) => {
+          // Ignore error payloads from the API route
+          const years = Object.keys(d).map(Number).filter(n => !isNaN(n) && n >= 1900).sort((a, b) => a - b);
+          if (years.length === 0) throw new Error('no valid years');
+          setRawData(d);
+          setYearRange([years[0], years[years.length - 1]]);
+        });
+
+    // Try live FRED data first, fall back to bundled statsbook JSON
+    load('/api/macro-data').catch(() => load('/statsbook_data.json'));
   }, []);
 
   const rebuildChartData = useCallback((data: DataMap, series: ActiveSeries[]) => {
