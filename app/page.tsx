@@ -22,7 +22,7 @@ export default function Home() {
   const [colorIndex, setColorIndex] = useState(0);
 
   useEffect(() => {
-    fetch('/statsbook_data.json')
+    fetch('/api/macro-data')
       .then(r => r.json())
       .then((d: DataMap) => {
         setRawData(d);
