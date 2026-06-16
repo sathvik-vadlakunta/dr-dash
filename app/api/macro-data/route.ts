@@ -5,34 +5,42 @@ export const revalidate = 86400;
 
 const BASE = 'https://api.stlouisfed.org/fred/series/observations';
 
-// Fetch one FRED series and return { year: value } map
+// Fetch one FRED series — returns empty object on any failure (never throws)
 async function fetchFred(
   seriesId: string,
   opts: { aggregation?: 'avg' | 'sum' | 'eop'; units?: string } = {}
 ): Promise<Record<number, number>> {
-  const key = process.env.FRED_API_KEY;
-  if (!key) throw new Error('FRED_API_KEY not set');
+  try {
+    const key = process.env.FRED_API_KEY;
+    if (!key) throw new Error('FRED_API_KEY not set');
 
-  const params = new URLSearchParams({
-    series_id: seriesId,
-    api_key: key,
-    file_type: 'json',
-    frequency: 'a',
-    ...(opts.aggregation ? { aggregation_method: opts.aggregation } : {}),
-    ...(opts.units ? { units: opts.units } : {}),
-  });
+    const params = new URLSearchParams({
+      series_id: seriesId,
+      api_key: key,
+      file_type: 'json',
+      frequency: 'a',
+      ...(opts.aggregation ? { aggregation_method: opts.aggregation } : {}),
+      ...(opts.units ? { units: opts.units } : {}),
+    });
 
-  const res = await fetch(`${BASE}?${params}`, { next: { revalidate: 86400 } });
-  if (!res.ok) throw new Error(`FRED ${seriesId}: ${res.status}`);
+    const res = await fetch(`${BASE}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) {
+      console.warn(`FRED ${seriesId}: HTTP ${res.status} — skipping`);
+      return {};
+    }
 
-  const json = await res.json();
-  const out: Record<number, number> = {};
-  for (const obs of json.observations ?? []) {
-    const yr = new Date(obs.date).getFullYear();
-    const val = parseFloat(obs.value);
-    if (!isNaN(val) && yr >= 1929) out[yr] = val;
+    const json = await res.json();
+    const out: Record<number, number> = {};
+    for (const obs of json.observations ?? []) {
+      const yr = new Date(obs.date).getFullYear();
+      const val = parseFloat(obs.value);
+      if (!isNaN(val) && yr >= 1929) out[yr] = val;
+    }
+    return out;
+  } catch (e) {
+    console.warn(`fetchFred error:`, e);
+    return {};
   }
-  return out;
 }
 
 // FRED series IDs mapped to our data fields
@@ -79,7 +87,7 @@ export async function GET() {
       fetchFred('CES3000000008', { aggregation: 'avg' }), // mfg hourly earnings
       fetchFred('AAA', { aggregation: 'avg' }),
       fetchFred('MEFAINUSA672N'),
-      fetchFred('PPAAFAM'),
+      fetchFred('PPAAUS'),   // Poverty rate, all people (families not on FRED)
       fetchFred('PCEC'),
       fetchFred('GPDI'),
       fetchFred('GCE'),
