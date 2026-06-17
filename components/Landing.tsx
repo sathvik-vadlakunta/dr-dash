@@ -13,7 +13,7 @@ export default function Landing({ onEnterApp, onGoToLessons }: Props) {
     <div className="min-h-screen overflow-y-auto" style={{ background: 'var(--cream)', color: 'var(--navy)' }}>
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-20 px-8 py-4 flex items-center justify-between border-b" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
+      <nav className="sticky top-0 z-20 px-4 md:px-8 py-4 flex items-center justify-between border-b" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--coral)' }}>
             <BarChart2 size={16} color="white" />
@@ -41,21 +41,21 @@ export default function Landing({ onEnterApp, onGoToLessons }: Props) {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="px-8 pt-20 pb-16 text-center max-w-3xl mx-auto">
+      <section className="px-4 md:px-8 pt-12 md:pt-20 pb-12 md:pb-16 text-center max-w-3xl mx-auto">
         <div
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold uppercase tracking-widest"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 md:mb-8 text-xs font-bold uppercase tracking-widest"
           style={{ background: 'var(--tan)', color: 'var(--coral)' }}
         >
           <TrendingUp size={11} /> U.S. Macroeconomic Data · 1929–2024
         </div>
-        <h1 className="text-5xl md:text-6xl font-black leading-tight mb-6" style={{ color: 'var(--navy)' }}>
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-5 md:mb-6" style={{ color: 'var(--navy)' }}>
           Understand the<br />
           <span style={{ color: 'var(--coral)' }}>U.S. Economy.</span>
         </h1>
-        <p className="text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: 'var(--navy)', opacity: 0.65 }}>
+        <p className="text-base md:text-lg leading-relaxed mb-8 md:mb-10 max-w-xl mx-auto" style={{ color: 'var(--navy)', opacity: 0.65 }}>
           96 years of real macroeconomic data, 7 transformations, and 5 guided lessons that build genuine intuition — not just definitions.
         </p>
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap gap-3 md:gap-4 justify-center">
           <button
             onClick={onEnterApp}
             className="flex items-center gap-2 px-7 py-3.5 rounded-2xl font-bold text-white text-sm transition-transform hover:scale-[1.02] active:scale-[0.98]"
@@ -92,9 +92,9 @@ export default function Landing({ onEnterApp, onGoToLessons }: Props) {
       </section>
 
       {/* ── Features ─────────────────────────────────────────────────────────── */}
-      <section className="py-16 px-8">
+      <section className="py-12 md:py-16 px-4 md:px-8">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-black text-center mb-3" style={{ color: 'var(--navy)' }}>
+          <h2 className="text-2xl md:text-3xl font-black text-center mb-3" style={{ color: 'var(--navy)' }}>
             Built for <span style={{ color: 'var(--coral)' }}>real learning</span>
           </h2>
           <p className="text-center text-sm mb-12" style={{ color: 'var(--navy)', opacity: 0.5 }}>Not a textbook. Not passive reading.</p>
@@ -133,7 +133,7 @@ export default function Landing({ onEnterApp, onGoToLessons }: Props) {
       </section>
 
       {/* ── Lessons preview ──────────────────────────────────────────────────── */}
-      <section className="py-14 px-8 border-t" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
+      <section className="py-10 md:py-14 px-4 md:px-8 border-t" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--navy)' }}>Start with a lesson</h2>
           <p className="text-sm mb-8" style={{ color: 'var(--navy)', opacity: 0.5 }}>
@@ -170,9 +170,9 @@ export default function Landing({ onEnterApp, onGoToLessons }: Props) {
       </section>
 
       {/* ── CTA ──────────────────────────────────────────────────────────────── */}
-      <section className="py-20 px-8 text-center" style={{ background: 'var(--navy)' }}>
-        <h2 className="text-3xl font-black mb-4 text-white">Ready to explore the data?</h2>
-        <p className="text-base mb-10 max-w-sm mx-auto" style={{ color: 'white', opacity: 0.55 }}>
+      <section className="py-14 md:py-20 px-4 md:px-8 text-center" style={{ background: 'var(--navy)' }}>
+        <h2 className="text-2xl md:text-3xl font-black mb-4 text-white">Ready to explore the data?</h2>
+        <p className="text-base mb-8 md:mb-10 max-w-sm mx-auto" style={{ color: 'white', opacity: 0.55 }}>
           The entire statsbook — 96 years, 36 series — at your fingertips.
         </p>
         <button
@@ -185,7 +185,7 @@ export default function Landing({ onEnterApp, onGoToLessons }: Props) {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
-      <footer className="px-8 py-6 text-center text-xs" style={{ background: 'var(--navy)', color: 'rgba(255,255,255,0.35)' }}>
+      <footer className="px-4 md:px-8 py-6 text-center text-xs" style={{ background: 'var(--navy)', color: 'rgba(255,255,255,0.35)' }}>
         © 2025 Dr. Dash · Pingle, <em>U.S. Macroeconomic Statistics</em>, 29th ed. (2025)
       </footer>
     </div>

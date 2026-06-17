@@ -79,18 +79,22 @@ export default function DrChart({ data, series, yearRange, onYearRangeChange }: 
     : '';
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 p-5" style={{ background: 'white' }}>
+    <div className="flex-1 flex flex-col min-h-0 p-3 md:p-5" style={{ background: 'white' }}>
       {/* Year range */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mb-3 md:mb-4">
         <span className="text-xs font-black uppercase tracking-widest shrink-0" style={{ color: 'var(--navy)', opacity: 0.4 }}>Range</span>
-        <span className="text-xs font-bold shrink-0" style={{ color: 'var(--coral)' }}>{yearRange[0]}</span>
-        <input type="range" min={minYear} max={maxYear - 1} value={yearRange[0]}
-          onChange={e => onYearRangeChange([+e.target.value, yearRange[1]])}
-          className="flex-1" style={{ accentColor: 'var(--coral)' }} />
-        <input type="range" min={yearRange[0] + 1} max={maxYear} value={yearRange[1]}
-          onChange={e => onYearRangeChange([yearRange[0], +e.target.value])}
-          className="flex-1" style={{ accentColor: 'var(--coral)' }} />
-        <span className="text-xs font-bold shrink-0" style={{ color: 'var(--coral)' }}>{yearRange[1]}</span>
+        <div className="flex items-center gap-2 flex-1">
+          <span className="text-xs font-bold shrink-0" style={{ color: 'var(--coral)' }}>{yearRange[0]}</span>
+          <input type="range" min={minYear} max={maxYear - 1} value={yearRange[0]}
+            onChange={e => onYearRangeChange([+e.target.value, yearRange[1]])}
+            className="flex-1" style={{ accentColor: 'var(--coral)' }} />
+        </div>
+        <div className="flex items-center gap-2 flex-1">
+          <input type="range" min={yearRange[0] + 1} max={maxYear} value={yearRange[1]}
+            onChange={e => onYearRangeChange([yearRange[0], +e.target.value])}
+            className="flex-1" style={{ accentColor: 'var(--coral)' }} />
+          <span className="text-xs font-bold shrink-0" style={{ color: 'var(--coral)' }}>{yearRange[1]}</span>
+        </div>
       </div>
 
       <ResponsiveContainer width="100%" height="100%">

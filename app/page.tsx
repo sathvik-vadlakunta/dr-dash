@@ -8,7 +8,7 @@ import LessonsPanel from '@/components/LessonsPanel';
 import Landing from '@/components/Landing';
 import { ActiveSeries, ChartDataPoint, SeriesKey, TransformType, YearData } from '@/types';
 import { applyTransform } from '@/lib/transforms';
-import { BookOpen, BarChart2 } from 'lucide-react';
+import { BookOpen, BarChart2, PlusCircle } from 'lucide-react';
 
 type DataMap = Record<string, YearData>;
 
@@ -21,6 +21,7 @@ export default function Home() {
   const [tab, setTab] = useState<'chart' | 'lessons'>('chart');
   const [colorIndex, setColorIndex] = useState(0);
   const [dataSource, setDataSource] = useState<'loading' | 'live' | 'static'>('loading');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const load = (url: string) =>
@@ -117,8 +118,8 @@ export default function Home() {
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--cream)', color: 'var(--navy)' }}>
       {/* Header */}
-      <header className="shrink-0 px-6 py-3 flex items-center justify-between border-b" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 px-3 md:px-6 py-3 flex items-center justify-between border-b gap-2" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
+        <div className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--coral)' }}>
             <BarChart2 size={17} className="text-white" />
           </div>
@@ -126,7 +127,7 @@ export default function Home() {
             <h1 className="font-black text-lg leading-none" style={{ color: 'var(--navy)' }}>
               Dr.<span style={{ color: 'var(--coral)' }}>Dash</span>
             </h1>
-            <p className="text-[11px] leading-none mt-0.5" style={{ color: 'var(--navy)', opacity: 0.45 }}>U.S. Macroeconomic Data · 1929–2024</p>
+            <p className="text-[11px] leading-none mt-0.5 hidden sm:block" style={{ color: 'var(--navy)', opacity: 0.45 }}>U.S. Macroeconomic Data · 1929–2024</p>
           </div>
         </div>
 
@@ -135,24 +136,34 @@ export default function Home() {
           {tabBtn('lessons', <BookOpen size={14} />, 'Lessons')}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile: open sidebar button (chart tab only) */}
+          {tab === 'chart' && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold"
+              style={{ background: 'var(--coral)', color: 'white' }}
+            >
+              <PlusCircle size={14} /> Series
+            </button>
+          )}
           {/* Data source indicator */}
           {dataSource === 'loading' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold animate-pulse" style={{ background: 'var(--cream-dark)', color: 'var(--navy)' }}>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold animate-pulse" style={{ background: 'var(--cream-dark)', color: 'var(--navy)' }}>
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--navy)', opacity: 0.3 }} />
-              Loading…
+              <span className="hidden sm:inline">Loading…</span>
             </div>
           )}
           {dataSource === 'live' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(91,168,154,0.12)', color: 'var(--teal)' }}>
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--teal)' }} />
-              Live · FRED API
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(91,168,154,0.12)', color: 'var(--teal)' }}>
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--teal)' }} />
+              <span className="hidden sm:inline">Live · FRED API</span>
             </div>
           )}
           {dataSource === 'static' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(212,160,32,0.12)', color: '#A07800' }}>
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#D4A020' }} />
-              Statsbook 2025
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(212,160,32,0.12)', color: '#A07800' }}>
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#D4A020' }} />
+              <span className="hidden sm:inline">Statsbook 2025</span>
             </div>
           )}
           <button
@@ -173,6 +184,8 @@ export default function Home() {
               onAdd={addSeries}
               activeKeys={activeSeries.map(s => s.key)}
               nextColor={COLORS[colorIndex % COLORS.length]}
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
             />
             <div className="flex-1 flex flex-col min-w-0">
               <TransformPanel
@@ -192,15 +205,15 @@ export default function Home() {
           </>
         ) : (
           <div className="flex flex-1 min-h-0">
-            {/* Lessons panel — half screen */}
-            <div className="w-[420px] shrink-0 border-r overflow-hidden flex flex-col" style={{ borderColor: 'var(--cream-dark)', background: 'var(--cream)' }}>
+            {/* Lessons panel — full width on mobile, fixed width on desktop */}
+            <div className="w-full md:w-[420px] shrink-0 md:border-r overflow-hidden flex flex-col" style={{ borderColor: 'var(--cream-dark)', background: 'var(--cream)' }}>
               <LessonsPanel
                 onSetChartSeries={setChartSeries}
                 activeSeries={activeSeries}
               />
             </div>
-            {/* Live chart on the right */}
-            <div className="flex-1 flex flex-col min-w-0" style={{ background: 'white' }}>
+            {/* Live chart — hidden on mobile, visible on desktop */}
+            <div className="hidden md:flex flex-1 flex-col min-w-0" style={{ background: 'white' }}>
               <TransformPanel
                 series={activeSeries}
                 onTransformChange={changeTransform}
@@ -220,7 +233,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="shrink-0 px-6 py-2 border-t flex gap-6 items-center" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
+      <footer className="shrink-0 px-4 md:px-6 py-2 border-t hidden sm:flex gap-4 md:gap-6 items-center" style={{ background: 'white', borderColor: 'var(--cream-dark)' }}>
         {[
           ['96', 'years (1929–2024)'],
           ['36', 'data series'],
