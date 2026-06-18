@@ -8,20 +8,43 @@ import LessonsPanel from '@/components/LessonsPanel';
 import Landing from '@/components/Landing';
 import { ActiveSeries, ChartDataPoint, SeriesKey, TransformType, YearData } from '@/types';
 import { applyTransform } from '@/lib/transforms';
-import { BookOpen, BarChart2, PlusCircle } from 'lucide-react';
+import { BookOpen, BarChart2, PlusCircle, Columns2, X as XIcon } from 'lucide-react';
 
 type DataMap = Record<string, YearData>;
+
+function buildPoints(data: DataMap, series: ActiveSeries[]): ChartDataPoint[] {
+  if (!Object.keys(data).length) return [];
+  const years = Object.keys(data).map(Number).sort((a, b) => a - b);
+  return years.map(year => {
+    const point: ChartDataPoint = { year };
+    series.forEach(s => {
+      const transformed = applyTransform(data, s.key, s.transform, s.denominator);
+      point[`${s.key}_${s.transform}`] = transformed.find(t => t.year === year)?.value ?? null;
+    });
+    return point;
+  });
+}
 
 export default function Home() {
   const [showLanding, setShowLanding] = useState(true);
   const [rawData, setRawData] = useState<DataMap>({});
+  const [tab, setTab] = useState<'chart' | 'lessons'>('chart');
+  const [dataSource, setDataSource] = useState<'loading' | 'live' | 'static'>('loading');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [splitMode, setSplitMode] = useState(false);
+  const [focusedPanel, setFocusedPanel] = useState<0 | 1>(0);
+
+  // Panel 0
   const [activeSeries, setActiveSeries] = useState<ActiveSeries[]>([]);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [yearRange, setYearRange] = useState<[number, number]>([1929, 2024]);
-  const [tab, setTab] = useState<'chart' | 'lessons'>('chart');
   const [colorIndex, setColorIndex] = useState(0);
-  const [dataSource, setDataSource] = useState<'loading' | 'live' | 'static'>('loading');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Panel 1
+  const [activeSeries2, setActiveSeries2] = useState<ActiveSeries[]>([]);
+  const [chartData2, setChartData2] = useState<ChartDataPoint[]>([]);
+  const [yearRange2, setYearRange2] = useState<[number, number]>([1929, 2024]);
+  const [colorIndex2, setColorIndex2] = useState(0);
 
   useEffect(() => {
     const load = (url: string) =>
@@ -31,66 +54,44 @@ export default function Home() {
           const years = Object.keys(d).map(Number).filter(n => !isNaN(n) && n >= 1900).sort((a, b) => a - b);
           if (years.length === 0) throw new Error('no valid years');
           setRawData(d);
-          setYearRange([years[0], years[years.length - 1]]);
+          const range: [number, number] = [years[0], years[years.length - 1]];
+          setYearRange(range);
+          setYearRange2(range);
         });
 
     load('/api/macro-data')
       .then(() => setDataSource('live'))
-      .catch(() =>
-        load('/statsbook_data.json')
-          .then(() => setDataSource('static'))
-      );
+      .catch(() => load('/statsbook_data.json').then(() => setDataSource('static')));
   }, []);
 
-  const rebuildChartData = useCallback((data: DataMap, series: ActiveSeries[]) => {
-    if (!Object.keys(data).length) return;
-    const years = Object.keys(data).map(Number).sort((a, b) => a - b);
-    const points: ChartDataPoint[] = years.map(year => {
-      const point: ChartDataPoint = { year };
-      series.forEach(s => {
-        const key = `${s.key}_${s.transform}`;
-        const transformed = applyTransform(data, s.key, s.transform, s.denominator);
-        const found = transformed.find(t => t.year === year);
-        point[key] = found?.value ?? null;
-      });
-      return point;
-    });
-    setChartData(points);
-  }, []);
+  useEffect(() => { setChartData(buildPoints(rawData, activeSeries)); }, [rawData, activeSeries]);
+  useEffect(() => { setChartData2(buildPoints(rawData, activeSeries2)); }, [rawData, activeSeries2]);
 
-  useEffect(() => {
-    rebuildChartData(rawData, activeSeries);
-  }, [rawData, activeSeries, rebuildChartData]);
-
-  const addSeries = useCallback((key: SeriesKey, color: string) => {
-    setActiveSeries(prev => {
-      if (prev.find(s => s.key === key)) return prev;
-      return [...prev, { key, transform: 'level', color }];
-    });
+  // Panel 0 handlers
+  const addToPanel0 = useCallback((key: SeriesKey, color: string) => {
+    setActiveSeries(prev => prev.find(s => s.key === key) ? prev : [...prev, { key, transform: 'level', color }]);
     setColorIndex(i => (i + 1) % COLORS.length);
   }, []);
+  const removeSeries = useCallback((key: SeriesKey) => setActiveSeries(prev => prev.filter(s => s.key !== key)), []);
+  const changeTransform = useCallback((key: SeriesKey, t: TransformType) => setActiveSeries(prev => prev.map(s => s.key === key ? { ...s, transform: t } : s)), []);
+  const changeDenominator = useCallback((key: SeriesKey, d: SeriesKey) => setActiveSeries(prev => prev.map(s => s.key === key ? { ...s, denominator: d } : s)), []);
+  const transformAll = useCallback((t: TransformType) => setActiveSeries(prev => prev.map(s => ({ ...s, transform: t }))), []);
+  const setChartSeries = useCallback((series: ActiveSeries[]) => { setActiveSeries(series); setColorIndex(series.length % COLORS.length); }, []);
 
-  const removeSeries = useCallback((key: SeriesKey) => {
-    setActiveSeries(prev => prev.filter(s => s.key !== key));
+  // Panel 1 handlers
+  const addToPanel1 = useCallback((key: SeriesKey, color: string) => {
+    setActiveSeries2(prev => prev.find(s => s.key === key) ? prev : [...prev, { key, transform: 'level', color }]);
+    setColorIndex2(i => (i + 1) % COLORS.length);
   }, []);
+  const removeSeries2 = useCallback((key: SeriesKey) => setActiveSeries2(prev => prev.filter(s => s.key !== key)), []);
+  const changeTransform2 = useCallback((key: SeriesKey, t: TransformType) => setActiveSeries2(prev => prev.map(s => s.key === key ? { ...s, transform: t } : s)), []);
+  const changeDenominator2 = useCallback((key: SeriesKey, d: SeriesKey) => setActiveSeries2(prev => prev.map(s => s.key === key ? { ...s, denominator: d } : s)), []);
+  const transformAll2 = useCallback((t: TransformType) => setActiveSeries2(prev => prev.map(s => ({ ...s, transform: t }))), []);
 
-  const changeTransform = useCallback((key: SeriesKey, transform: TransformType) => {
-    setActiveSeries(prev => prev.map(s => s.key === key ? { ...s, transform } : s));
-  }, []);
-
-  const changeDenominator = useCallback((key: SeriesKey, denom: SeriesKey) => {
-    setActiveSeries(prev => prev.map(s => s.key === key ? { ...s, denominator: denom } : s));
-  }, []);
-
-  const transformAll = useCallback((transform: TransformType) => {
-    setActiveSeries(prev => prev.map(s => ({ ...s, transform })));
-  }, []);
-
-  // Lessons can replace the active chart series entirely
-  const setChartSeries = useCallback((series: ActiveSeries[]) => {
-    setActiveSeries(series);
-    setColorIndex(series.length % COLORS.length);
-  }, []);
+  const addSeries = useCallback((key: SeriesKey, color: string) => {
+    if (focusedPanel === 0) addToPanel0(key, color);
+    else addToPanel1(key, color);
+  }, [focusedPanel, addToPanel0, addToPanel1]);
 
   if (showLanding) {
     return (
@@ -115,6 +116,9 @@ export default function Home() {
     </button>
   );
 
+  const nextColor = COLORS[(focusedPanel === 0 ? colorIndex : colorIndex2) % COLORS.length];
+  const activeKeysForSidebar = focusedPanel === 0 ? activeSeries.map(s => s.key) : activeSeries2.map(s => s.key);
+
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--cream)', color: 'var(--navy)' }}>
       {/* Header */}
@@ -137,7 +141,25 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile: open sidebar button (chart tab only) */}
+          {/* Split view toggle — desktop + chart tab only */}
+          {tab === 'chart' && (
+            <button
+              onClick={() => setSplitMode(m => !m)}
+              title={splitMode ? 'Exit split view' : 'Split view — two charts side by side'}
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all"
+              style={{
+                background: splitMode ? 'var(--navy)' : 'transparent',
+                color: splitMode ? 'white' : 'var(--navy)',
+                borderColor: splitMode ? 'var(--navy)' : 'var(--cream-dark)',
+                opacity: splitMode ? 1 : 0.6,
+              }}
+            >
+              <Columns2 size={14} />
+              <span>Split</span>
+            </button>
+          )}
+
+          {/* Mobile: open sidebar button */}
           {tab === 'chart' && (
             <button
               onClick={() => setSidebarOpen(true)}
@@ -147,6 +169,7 @@ export default function Home() {
               <PlusCircle size={14} /> Series
             </button>
           )}
+
           {/* Data source indicator */}
           {dataSource === 'loading' && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold animate-pulse" style={{ background: 'var(--cream-dark)', color: 'var(--navy)' }}>
@@ -182,37 +205,111 @@ export default function Home() {
           <>
             <Sidebar
               onAdd={addSeries}
-              activeKeys={activeSeries.map(s => s.key)}
-              nextColor={COLORS[colorIndex % COLORS.length]}
+              activeKeys={activeKeysForSidebar}
+              nextColor={nextColor}
               isOpen={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
+              splitMode={splitMode}
+              focusedPanel={focusedPanel}
+              onFocusPanel={setFocusedPanel}
             />
-            <div className="flex-1 flex flex-col min-w-0">
-              <TransformPanel
-                series={activeSeries}
-                onTransformChange={changeTransform}
-                onDenominatorChange={changeDenominator}
-                onRemove={removeSeries}
-                onTransformAll={transformAll}
-              />
-              <DrChart
-                data={chartData}
-                series={activeSeries}
-                yearRange={yearRange}
-                onYearRangeChange={setYearRange}
-              />
+
+            {/* Chart panels */}
+            <div className="flex flex-1 min-w-0 min-h-0">
+              {/* Panel 0 */}
+              <div
+                className="flex flex-col min-w-0 min-h-0"
+                style={{
+                  flex: 1,
+                  borderRight: splitMode ? '2px solid var(--cream-dark)' : 'none',
+                  outline: splitMode && focusedPanel === 0 ? '2px solid var(--coral)' : 'none',
+                  outlineOffset: '-2px',
+                }}
+              >
+                {splitMode && (
+                  <button
+                    onClick={() => setFocusedPanel(0)}
+                    className="shrink-0 px-3 py-1.5 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest border-b"
+                    style={{
+                      background: focusedPanel === 0 ? 'rgba(232,113,90,0.08)' : 'var(--cream)',
+                      borderColor: 'var(--cream-dark)',
+                      color: focusedPanel === 0 ? 'var(--coral)' : 'var(--navy)',
+                    }}
+                  >
+                    <div className="w-2 h-2 rounded-full" style={{ background: focusedPanel === 0 ? 'var(--coral)' : 'var(--cream-dark)' }} />
+                    Panel 1 {focusedPanel === 0 && <span style={{ opacity: 0.6 }}>· adding here</span>}
+                    {activeSeries2.length > 0 && focusedPanel !== 0 && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setActiveSeries([]); }}
+                        className="ml-auto opacity-40 hover:opacity-80"
+                      >
+                        <XIcon size={11} />
+                      </button>
+                    )}
+                  </button>
+                )}
+                <TransformPanel
+                  series={activeSeries}
+                  onTransformChange={changeTransform}
+                  onDenominatorChange={changeDenominator}
+                  onRemove={removeSeries}
+                  onTransformAll={transformAll}
+                />
+                <DrChart
+                  data={chartData}
+                  series={activeSeries}
+                  yearRange={yearRange}
+                  onYearRangeChange={setYearRange}
+                />
+              </div>
+
+              {/* Panel 1 — only shown in split mode */}
+              {splitMode && (
+                <div
+                  className="flex flex-col min-w-0 min-h-0"
+                  style={{
+                    flex: 1,
+                    outline: focusedPanel === 1 ? '2px solid var(--coral)' : 'none',
+                    outlineOffset: '-2px',
+                  }}
+                >
+                  <button
+                    onClick={() => setFocusedPanel(1)}
+                    className="shrink-0 px-3 py-1.5 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest border-b"
+                    style={{
+                      background: focusedPanel === 1 ? 'rgba(232,113,90,0.08)' : 'var(--cream)',
+                      borderColor: 'var(--cream-dark)',
+                      color: focusedPanel === 1 ? 'var(--coral)' : 'var(--navy)',
+                    }}
+                  >
+                    <div className="w-2 h-2 rounded-full" style={{ background: focusedPanel === 1 ? 'var(--coral)' : 'var(--cream-dark)' }} />
+                    Panel 2 {focusedPanel === 1 && <span style={{ opacity: 0.6 }}>· adding here</span>}
+                  </button>
+                  <TransformPanel
+                    series={activeSeries2}
+                    onTransformChange={changeTransform2}
+                    onDenominatorChange={changeDenominator2}
+                    onRemove={removeSeries2}
+                    onTransformAll={transformAll2}
+                  />
+                  <DrChart
+                    data={chartData2}
+                    series={activeSeries2}
+                    yearRange={yearRange2}
+                    onYearRangeChange={setYearRange2}
+                  />
+                </div>
+              )}
             </div>
           </>
         ) : (
           <div className="flex flex-1 min-h-0">
-            {/* Lessons panel — full width on mobile, fixed width on desktop */}
             <div className="w-full md:w-[420px] shrink-0 md:border-r overflow-hidden flex flex-col" style={{ borderColor: 'var(--cream-dark)', background: 'var(--cream)' }}>
               <LessonsPanel
                 onSetChartSeries={setChartSeries}
                 activeSeries={activeSeries}
               />
             </div>
-            {/* Live chart — hidden on mobile, visible on desktop */}
             <div className="hidden md:flex flex-1 flex-col min-w-0" style={{ background: 'white' }}>
               <TransformPanel
                 series={activeSeries}
@@ -244,9 +341,11 @@ export default function Home() {
             <strong style={{ color: 'var(--coral)', opacity: 1 }}>{n}</strong> {label}
           </span>
         ))}
-        {activeSeries.length > 0 && (
+        {(activeSeries.length > 0 || activeSeries2.length > 0) && (
           <span className="ml-auto text-xs font-bold" style={{ color: 'var(--coral)' }}>
-            {activeSeries.length} series plotted
+            {splitMode
+              ? `${activeSeries.length} + ${activeSeries2.length} series`
+              : `${activeSeries.length} series plotted`}
           </span>
         )}
       </footer>

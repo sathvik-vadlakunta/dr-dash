@@ -16,9 +16,12 @@ interface Props {
   nextColor: string;
   isOpen?: boolean;
   onClose?: () => void;
+  splitMode?: boolean;
+  focusedPanel?: 0 | 1;
+  onFocusPanel?: (p: 0 | 1) => void;
 }
 
-export default function Sidebar({ onAdd, activeKeys, nextColor, isOpen, onClose }: Props) {
+export default function Sidebar({ onAdd, activeKeys, nextColor, isOpen, onClose, splitMode, focusedPanel, onFocusPanel }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ Output: true });
 
   return (
@@ -48,7 +51,6 @@ export default function Sidebar({ onAdd, activeKeys, nextColor, isOpen, onClose 
             <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--navy)', opacity: 0.5 }}>Data Series</h2>
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--navy)', opacity: 0.4 }}>Tap any series to plot it</p>
           </div>
-          {/* Close button — mobile only */}
           <button
             onClick={onClose}
             className="md:hidden p-1.5 rounded-lg transition-opacity hover:opacity-70"
@@ -57,6 +59,27 @@ export default function Sidebar({ onAdd, activeKeys, nextColor, isOpen, onClose 
             <X size={16} />
           </button>
         </div>
+
+        {/* Panel selector — visible in split mode */}
+        {splitMode && (
+          <div className="px-3 py-2 border-b flex gap-1.5" style={{ borderColor: 'var(--cream-dark)', background: 'var(--cream)' }}>
+            <span className="text-[10px] font-black uppercase tracking-widest self-center mr-1" style={{ color: 'var(--navy)', opacity: 0.4 }}>Add to:</span>
+            {([0, 1] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => onFocusPanel?.(p)}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all"
+                style={{
+                  background: focusedPanel === p ? 'var(--coral)' : 'white',
+                  color: focusedPanel === p ? 'white' : 'var(--navy)',
+                  opacity: focusedPanel === p ? 1 : 0.5,
+                }}
+              >
+                Panel {p + 1}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto">
           {CATEGORIES.map(cat => (
