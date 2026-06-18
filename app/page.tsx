@@ -8,7 +8,7 @@ import LessonsPanel from '@/components/LessonsPanel';
 import Landing from '@/components/Landing';
 import { ActiveSeries, ChartDataPoint, SeriesKey, TransformType, YearData } from '@/types';
 import { applyTransform } from '@/lib/transforms';
-import { BookOpen, BarChart2, PlusCircle, Columns2, X as XIcon } from 'lucide-react';
+import { BookOpen, BarChart2, PlusCircle, Columns2, Rows2, X as XIcon } from 'lucide-react';
 
 type DataMap = Record<string, YearData>;
 
@@ -32,6 +32,7 @@ export default function Home() {
   const [dataSource, setDataSource] = useState<'loading' | 'live' | 'static'>('loading');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [splitMode, setSplitMode] = useState(false);
+  const [splitDir, setSplitDir] = useState<'horizontal' | 'vertical'>('horizontal');
   const [focusedPanel, setFocusedPanel] = useState<0 | 1>(0);
 
   // Panel 0
@@ -141,22 +142,51 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Split view toggle — desktop + chart tab only */}
+          {/* Split view controls — desktop + chart tab only */}
           {tab === 'chart' && (
-            <button
-              onClick={() => setSplitMode(m => !m)}
-              title={splitMode ? 'Exit split view' : 'Split view — two charts side by side'}
-              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all"
-              style={{
-                background: splitMode ? 'var(--navy)' : 'transparent',
-                color: splitMode ? 'white' : 'var(--navy)',
-                borderColor: splitMode ? 'var(--navy)' : 'var(--cream-dark)',
-                opacity: splitMode ? 1 : 0.6,
-              }}
-            >
-              <Columns2 size={14} />
-              <span>Split</span>
-            </button>
+            <div className="hidden md:flex items-center gap-1 p-1 rounded-xl border" style={{ borderColor: 'var(--cream-dark)', background: splitMode ? 'var(--cream)' : 'transparent' }}>
+              <button
+                onClick={() => setSplitMode(m => !m)}
+                title={splitMode ? 'Exit split view' : 'Split view'}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all"
+                style={{
+                  background: splitMode ? 'var(--navy)' : 'transparent',
+                  color: splitMode ? 'white' : 'var(--navy)',
+                  opacity: splitMode ? 1 : 0.5,
+                }}
+              >
+                <Columns2 size={13} />
+                <span>Split</span>
+              </button>
+              {splitMode && (
+                <>
+                  <button
+                    onClick={() => setSplitDir('horizontal')}
+                    title="Side by side"
+                    className="p-1.5 rounded-lg transition-all"
+                    style={{
+                      background: splitDir === 'horizontal' ? 'var(--coral)' : 'transparent',
+                      color: splitDir === 'horizontal' ? 'white' : 'var(--navy)',
+                      opacity: splitDir === 'horizontal' ? 1 : 0.4,
+                    }}
+                  >
+                    <Columns2 size={13} />
+                  </button>
+                  <button
+                    onClick={() => setSplitDir('vertical')}
+                    title="Stacked"
+                    className="p-1.5 rounded-lg transition-all"
+                    style={{
+                      background: splitDir === 'vertical' ? 'var(--coral)' : 'transparent',
+                      color: splitDir === 'vertical' ? 'white' : 'var(--navy)',
+                      opacity: splitDir === 'vertical' ? 1 : 0.4,
+                    }}
+                  >
+                    <Rows2 size={13} />
+                  </button>
+                </>
+              )}
+            </div>
           )}
 
           {/* Mobile: open sidebar button */}
@@ -215,15 +245,17 @@ export default function Home() {
             />
 
             {/* Chart panels */}
-            <div className="flex flex-1 min-w-0 min-h-0">
+            <div className={`flex flex-1 min-w-0 min-h-0 ${splitMode && splitDir === 'vertical' ? 'flex-col' : 'flex-row'}`}>
               {/* Panel 0 */}
               <div
                 className="flex flex-col min-w-0 min-h-0"
                 style={{
                   flex: 1,
-                  borderRight: splitMode ? '2px solid var(--cream-dark)' : 'none',
+                  borderRight: splitMode && splitDir === 'horizontal' ? '2px solid var(--cream-dark)' : 'none',
+                  borderBottom: splitMode && splitDir === 'vertical' ? '2px solid var(--cream-dark)' : 'none',
                   outline: splitMode && focusedPanel === 0 ? '2px solid var(--coral)' : 'none',
                   outlineOffset: '-2px',
+                  minHeight: 0,
                 }}
               >
                 {splitMode && (
